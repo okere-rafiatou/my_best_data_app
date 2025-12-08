@@ -3,7 +3,7 @@ import pandas as pd
 import sqlite3
 from requests import get
 from bs4 import BeautifulSoup as bs
-import time
+
 
 # Configuration de la page
 st.set_page_config(page_title="CoinAfrique Animal Scraper", layout="wide")
