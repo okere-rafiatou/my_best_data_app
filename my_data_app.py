@@ -150,13 +150,87 @@ st.markdown('''<style> .stButton>button {
 # Initialiser la base de données
 init_database()
 
-# Sidebar pour la navigation
-menu = st.sidebar.radio("📋 Menu", [
-    "🔍 Scraper des données", 
-    "📥 Télécharger données Web Scraper", 
-    "📊 Dashboard (données nettoyées)", 
-    "📝 Formulaires d'évaluation"
-])
+# ==================== SIDEBAR ====================
+st.sidebar.image("https://via.placeholder.com/300x100/FF6B35/FFFFFF?text=CoinAfrique+Scraper", use_container_width=True)
+
+st.sidebar.markdown("""
+<div style='text-align: center; padding: 10px;'>
+    <h2 style='color: #FF6B35; margin: 0;'>🐾 Animal Data</h2>
+    <p style='color: #666; font-size: 14px;'>Application de scraping</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+
+# Navigation avec style
+st.sidebar.markdown("""
+<style>
+    [data-testid=stSidebar] {
+        background-color: #f8f9fa;
+    }
+    .sidebar-menu {
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 10px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.sidebar.subheader("📋 Navigation")
+
+menu = st.sidebar.radio(
+    "Choisissez une section :",
+    [
+        "🔍 Scraper des données", 
+        "📥 Télécharger données Web Scraper", 
+        "📊 Dashboard (données nettoyées)", 
+        "📝 Formulaires d'évaluation"
+    ],
+    label_visibility="collapsed"
+)
+
+st.sidebar.markdown("---")
+
+# Statistiques rapides dans la sidebar
+st.sidebar.subheader("📊 Statistiques rapides")
+try:
+    df_stats = load_from_database()
+    if not df_stats.empty:
+        st.sidebar.metric("Total annonces", len(df_stats))
+        st.sidebar.metric("Catégories", df_stats['category'].nunique())
+        
+        df_clean_stats = clean_data(df_stats)
+        if not df_clean_stats.empty and 'price_clean' in df_clean_stats.columns:
+            avg_price = df_clean_stats['price_clean'].mean()
+            st.sidebar.metric("Prix moyen", f"{avg_price:,.0f} CFA")
+    else:
+        st.sidebar.info("Aucune donnée disponible")
+except:
+    st.sidebar.info("Aucune donnée disponible")
+
+st.sidebar.markdown("---")
+
+# Informations supplémentaires
+st.sidebar.subheader("ℹ️ À propos")
+st.sidebar.markdown("""
+<div style='font-size: 12px; color: #666;'>
+📦 <b>Version:</b> 1.0.0<br>
+🔧 <b>Tech:</b> Streamlit + BeautifulSoup<br>
+🌐 <b>Source:</b> CoinAfrique SN<br>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+
+# Liens utiles
+with st.sidebar.expander("🔗 Liens utiles"):
+    st.markdown("""
+    - [CoinAfrique](https://sn.coinafrique.com)
+    - [Documentation Streamlit](https://docs.streamlit.io)
+    - [BeautifulSoup Docs](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+    """)
 
 # ==================== SECTION 1: SCRAPER ====================
 if menu == "🔍 Scraper des données":
