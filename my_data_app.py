@@ -4,6 +4,7 @@ import sqlite3
 from requests import get
 from bs4 import BeautifulSoup as bs
 import time
+import os
 
 # Configuration de la page
 st.set_page_config(page_title="CoinAfrique Animal Scraper", layout="wide")
@@ -260,31 +261,32 @@ st.sidebar.markdown("""
         background: linear-gradient(180deg, #1e2433 0%, #252d3d 100%);
     }
     
-    /* Style pour les options du radio */
-    .stRadio > div {
-        background-color: transparent;
-    }
-    
-    .stRadio > div > label {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 12px 15px;
+    /* Style pour le selectbox dropdown */
+    .stSelectbox > div > div {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(79, 209, 197, 0.3);
         border-radius: 10px;
-        margin: 8px 0;
-        display: block;
         transition: all 0.3s ease;
-        border-left: 3px solid transparent;
-        color: #e2e8f0 !important;
     }
     
-    .stRadio > div > label:hover {
-        background: rgba(102, 126, 234, 0.2);
-        border-left: 3px solid #667eea;
-        transform: translateX(5px);
+    .stSelectbox > div > div:hover {
+        border-color: #4FD1C5;
+        box-shadow: 0 0 10px rgba(79, 209, 197, 0.3);
     }
     
-    .stRadio > div > label[data-checked="true"] {
-        background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
-        border-left: 3px solid #4FD1C5;
+    /* Style pour les options du dropdown */
+    .stSelectbox [data-baseweb="select"] {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .stSelectbox option {
+        background-color: #252d3d;
+        color: #e2e8f0;
+        padding: 10px;
+    }
+    
+    .stSelectbox option:hover {
+        background-color: rgba(102, 126, 234, 0.3);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -416,49 +418,84 @@ elif menu == "📥 Télécharger données Web Scraper":
     st.header("📥 Télécharger les données brutes (non nettoyées)")
     
     st.markdown("""
-    Cette section vous permet de télécharger les données scrapées avec Web Scraper (format brut, sans nettoyage).
+    Cette section vous permet de télécharger les données scrapées avec **Web Scraper** (format brut, sans nettoyage).
     """)
     
-    df_raw = load_from_database()
+    data_folder = "data"
     
-    if not df_raw.empty:
-        col1, col2, col3 = st.columns(3)
+    if os.path.exists(data_folder):
+        csv_files = [f for f in os.listdir(data_folder) if f.endswith(".csv")]
         
-        with col1:
-            st.metric("📊 Total d'annonces", len(df_raw))
-        with col2:
-            st.metric("📂 Catégories", df_raw['category'].nunique())
-        with col3:
-            st.metric("📅 Dernière mise à jour", df_raw['scrape_date'].max()[:10] if 'scrape_date' in df_raw.columns else "N/A")
-        
-        # Grouper par catégorie
-        st.subheader("📑 Répartition par catégorie")
-        category_counts = df_raw['category'].value_counts().reset_index()
-        category_counts.columns = ['Catégorie', 'Nombre d\'annonces']
-        st.dataframe(category_counts, use_container_width=True)
-        
-        # Charger les données par catégorie (comme votre code original)
-        st.subheader("📁 Données par catégorie")
-        
-        categories_list = df_raw['category'].unique()
-        
-        for idx, cat in enumerate(categories_list, 1):
-            df_cat = df_raw[df_raw['category'] == cat]
-            load_data(df_cat, f"Données {cat}", str(idx))
-        
-        # Télécharger toutes les données
-        st.subheader("💾 Télécharger toutes les données")
-        csv_all = df_raw.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="📥 Télécharger toutes les données (CSV)",
-            data=csv_all,
-            file_name='coinafrique_animals_all.csv',
-            mime='text/csv',
-        )
-        
+        if csv_files:
+            st.success(f"✅ {len(csv_files)} fichier(s) CSV trouvé(s) dans le dossier `data/`")
+            
+            # Afficher un aperçu des fichiers disponibles
+            st.subheader("📂 Fichiers CSV disponibles")
+            
+            for idx, file in enumerate(csv_files, 1):
+                with st.expander(f"📄 {file}"):
+                    try:
+                        df_file = pd.read_csv(os.path.join(data_folder, file))
+                        
+                        # Afficher les informations du fichier
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric("📊 Lignes", df_file.shape[0])
+                        with col2:
+                            st.metric("📋 Colonnes", df_file.shape[1])
+                        with col3:
+                            file_size = os.path.getsize(os.path.join(data_folder, file)) / 1024
+                            st.metric("💾 Taille", f"{file_size:.1f} KB")
+                        
+                        # Bouton pour afficher les données
+                        if st.button(f"👁️ Afficher les données de {file}", key=f"show_{idx}"):
+                            st.dataframe(df_file, use_container_width=True)
+                        
+                        # Bouton de téléchargement
+                        csv_bytes = df_file.to_csv(index=False).encode("utf-8")
+                        st.download_button(
+                            label=f"📥 Télécharger {file}",
+                            data=csv_bytes,
+                            file_name=file,
+                            mime="text/csv",
+                            key=f"download_{idx}"
+                        )
+                    except Exception as e:
+                        st.error(f"❌ Erreur lors de la lecture de {file}: {str(e)}")
+            
+            # Option pour télécharger tous les fichiers combinés
+            st.markdown("---")
+            st.subheader("📦 Télécharger toutes les données combinées")
+            
+            if st.button("🔗 Combiner et télécharger tous les CSV"):
+                try:
+                    all_dfs = []
+                    for file in csv_files:
+                        df_temp = pd.read_csv(os.path.join(data_folder, file))
+                        all_dfs.append(df_temp)
+                    
+                    df_combined = pd.concat(all_dfs, ignore_index=True)
+                    st.success(f"✅ {len(df_combined)} lignes combinées depuis {len(csv_files)} fichiers")
+                    
+                    # Aperçu des données combinées
+                    st.dataframe(df_combined.head(10), use_container_width=True)
+                    
+                    # Télécharger les données combinées
+                    csv_combined = df_combined.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label="📥 Télécharger toutes les données (CSV)",
+                        data=csv_combined,
+                        file_name="coinafrique_animals_all_combined.csv",
+                        mime="text/csv",
+                    )
+                except Exception as e:
+                    st.error(f"❌ Erreur lors de la combinaison: {str(e)}")
+        else:
+            st.warning("⚠️ Aucun fichier CSV trouvé dans le dossier `data/`")
+            st.info("💡 Conseil: Allez dans **🔍 Scraper des données** pour créer de nouveaux fichiers.")
     else:
-        st.info("ℹ️ Aucune donnée disponible. Veuillez d'abord scraper des données.")
-        st.markdown("👉 Allez dans **🔍 Scraper des données** pour commencer.")
+        st.error("❌ Le dossier `data/` n'existe pas.")
+        st.info("💡 Créez un dossier `data/` à la racine de votre projet et placez-y vos fichiers CSV.")
 
 # ==================== SECTION 3: DASHBOARD ====================
 elif menu == "📊 Dashboard (données nettoyées)":
