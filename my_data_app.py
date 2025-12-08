@@ -260,38 +260,39 @@ st.sidebar.markdown("""
         background: linear-gradient(180deg, #1e2433 0%, #252d3d 100%);
     }
     
-    /* Style pour les options du radio */
-    .stRadio > div {
-        background-color: transparent;
-    }
-    
-    .stRadio > div > label {
-        background: rgba(255, 255, 255, 0.05);
-        padding: 12px 15px;
+    /* Style pour le selectbox dropdown */
+    .stSelectbox > div > div {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(79, 209, 197, 0.3);
         border-radius: 10px;
-        margin: 8px 0;
-        display: block;
         transition: all 0.3s ease;
-        border-left: 3px solid transparent;
-        color: #e2e8f0 !important;
     }
     
-    .stRadio > div > label:hover {
-        background: rgba(102, 126, 234, 0.2);
-        border-left: 3px solid #667eea;
-        transform: translateX(5px);
+    .stSelectbox > div > div:hover {
+        border-color: #4FD1C5;
+        box-shadow: 0 0 10px rgba(79, 209, 197, 0.3);
     }
     
-    .stRadio > div > label[data-checked="true"] {
-        background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
-        border-left: 3px solid #4FD1C5;
+    /* Style pour les options du dropdown */
+    .stSelectbox [data-baseweb="select"] {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .stSelectbox option {
+        background-color: #252d3d;
+        color: #e2e8f0;
+        padding: 10px;
+    }
+    
+    .stSelectbox option:hover {
+        background-color: rgba(102, 126, 234, 0.3);
     }
 </style>
 """, unsafe_allow_html=True)
 
 st.sidebar.markdown("<h3 style='color: #4FD1C5; margin-bottom: 15px;'>📋 Navigation</h3>", unsafe_allow_html=True)
 
-menu = st.sidebar.radio(
+menu = st.sidebar.selectbox(
     "Choisissez une section :",
     [
         "🔍 Scraper des données", 
