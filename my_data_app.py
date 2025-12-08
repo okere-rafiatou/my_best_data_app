@@ -9,7 +9,7 @@ import os
 # Configuration de la page
 st.set_page_config(page_title="CoinAfrique Animal Scraper", layout="centered")
 
-# Traductions
+# Traductions complètes
 TRANSLATIONS = {
     'fr': {
         'title': '🐾 COINAFRIQUE ANIMAL DATA APP',
@@ -26,10 +26,14 @@ TRANSLATIONS = {
         'version': 'Version:',
         'tech': 'Tech:',
         'useful_links': '🔗 Liens utiles',
+        
+        # Menu
         'menu_scraper': '🔍 Scraper des données',
         'menu_download': '📥 Télécharger données Web Scraper',
         'menu_dashboard': '📊 Dashboard (données nettoyées)',
         'menu_forms': '📝 Formulaires d\'évaluation',
+        
+        # Scraper
         'scraper_header': '🔍 Scraper des données sur plusieurs pages',
         'scraper_warning': '⚠️ Le scraping peut prendre quelques minutes selon le nombre de pages.',
         'category': 'Catégorie à scraper',
@@ -41,10 +45,76 @@ TRANSLATIONS = {
         'preview': '📋 Aperçu des données',
         'download': '📥 Télécharger',
         'no_data_found': '⚠️ Aucune donnée trouvée.',
+        
+        # Téléchargement
+        'download_header': '📥 Télécharger les données brutes (non nettoyées)',
+        'download_desc': 'Cette section vous permet de télécharger les données scrapées avec Web Scraper (format brut, sans nettoyage).',
+        'files_found': 'fichier(s) CSV trouvé(s) dans le dossier',
+        'available_files': '📂 Fichiers CSV disponibles',
+        'rows': '📊 Lignes',
+        'columns': '📋 Colonnes',
+        'size': '💾 Taille',
+        'show_data': '👁️ Afficher les données de',
+        'download_file': '📥 Télécharger',
+        'download_all': '📦 Télécharger toutes les données combinées',
+        'combine_download': '🔗 Combiner et télécharger tous les CSV',
+        'combined_success': 'lignes combinées depuis',
+        'files': 'fichiers',
+        'download_combined': '📥 Télécharger toutes les données (CSV)',
+        'no_csv_found': '⚠️ Aucun fichier CSV trouvé dans le dossier',
+        'advice': '💡 Conseil: Allez dans',
+        'to_create': 'pour créer de nouveaux fichiers.',
+        'folder_not_exist': '❌ Le dossier data/ n\'existe pas.',
+        'create_folder': '💡 Créez un dossier data/ à la racine de votre projet et placez-y vos fichiers CSV.',
+        
+        # Dashboard
+        'dashboard_header': '📊 Dashboard des données nettoyées',
+        'total_ads': '📊 Annonces totales',
+        'min_price': '💵 Prix min',
+        'max_price': '💸 Prix max',
+        'stats_by_category': '📈 Statistiques par catégorie',
+        'count': 'Nombre',
+        'avg_price_cfa': 'Prix moyen (CFA)',
+        'min_price_cfa': 'Prix min (CFA)',
+        'max_price_cfa': 'Prix max (CFA)',
+        'avg_by_category': '💰 Prix moyen par catégorie',
+        'ads_by_category': '📊 Nombre d\'annonces par catégorie',
+        'top_locations': '📍 Top 10 des localisations',
+        'explore_data': '🔍 Explorer les données nettoyées',
+        'filter_by_category': 'Filtrer par catégorie',
+        'ads_displayed': 'annonces affichées',
+        'download_clean': '📥 Télécharger les données nettoyées (CSV)',
+        'no_data_scrape_first': 'ℹ️ Aucune donnée disponible. Veuillez d\'abord scraper des données.',
+        
+        # Formulaires
+        'forms_header': '📝 Formulaires d\'évaluation de l\'application',
+        'forms_desc': 'Votre avis est important pour nous aider à améliorer cette application. Merci de prendre quelques instants pour répondre à l\'un de ces questionnaires.',
+        'kobo_title': '📋 Formulaire KoboToolbox',
+        'kobo_desc': 'Remplissez le formulaire d\'évaluation sur KoboToolbox pour nous faire part de votre expérience.',
+        'kobo_info': 'Ce formulaire permet une collecte de données structurée et professionnelle.',
+        'kobo_button': '🔗 Ouvrir le formulaire KoboToolbox',
+        'kobo_note': '💡 KoboToolbox est une plateforme de collecte de données utilisée pour des enquêtes professionnelles.',
+        'google_title': '📝 Formulaire Google Forms',
+        'google_desc': 'Vous préférez Google Forms ? Remplissez ce formulaire pour partager vos commentaires et suggestions.',
+        'google_info': 'Interface simple et familière.',
+        'google_button': '🔗 Ouvrir le formulaire Google Forms',
+        'google_note': '💡 Google Forms permet un accès rapide et facile depuis n\'importe quel appareil.',
+        'why_evaluate': '❓ Pourquoi votre évaluation est importante',
+        'continuous_improvement': '🎯 Amélioration continue',
+        'improvement_desc': 'Vos retours nous aident à identifier les fonctionnalités à améliorer.',
+        'new_features': '💡 Nouvelles fonctionnalités',
+        'features_desc': 'Vos suggestions guident le développement de nouvelles features.',
+        'user_experience': '🤝 Expérience utilisateur',
+        'experience_desc': 'Votre avis façonne l\'évolution de l\'application.',
+        'thank_you': '✅ Merci d\'avance pour votre contribution !',
+        
+        # Animaux
         'dogs': '🐕 Chiens',
         'sheep': '🐑 Moutons',
         'poultry': '🐔 Poules, lapins et pigeons',
         'other_animals': '🦎 Autres animaux',
+        
+        # Footer
         'developed_by': 'Développé avec ❤️ par Rafiatou | Données de',
         'rights': '© 2024 - Tous droits réservés'
     },
@@ -63,10 +133,14 @@ TRANSLATIONS = {
         'version': 'Version:',
         'tech': 'Tech:',
         'useful_links': '🔗 Useful Links',
+        
+        # Menu
         'menu_scraper': '🔍 Scrape Data',
         'menu_download': '📥 Download Web Scraper Data',
         'menu_dashboard': '📊 Dashboard (cleaned data)',
         'menu_forms': '📝 Evaluation Forms',
+        
+        # Scraper
         'scraper_header': '🔍 Scrape data from multiple pages',
         'scraper_warning': '⚠️ Scraping may take a few minutes depending on the number of pages.',
         'category': 'Category to scrape',
@@ -78,10 +152,76 @@ TRANSLATIONS = {
         'preview': '📋 Data Preview',
         'download': '📥 Download',
         'no_data_found': '⚠️ No data found.',
+        
+        # Download
+        'download_header': '📥 Download raw data (uncleaned)',
+        'download_desc': 'This section allows you to download data scraped with Web Scraper (raw format, without cleaning).',
+        'files_found': 'CSV file(s) found in folder',
+        'available_files': '📂 Available CSV files',
+        'rows': '📊 Rows',
+        'columns': '📋 Columns',
+        'size': '💾 Size',
+        'show_data': '👁️ Show data from',
+        'download_file': '📥 Download',
+        'download_all': '📦 Download all combined data',
+        'combine_download': '🔗 Combine and download all CSVs',
+        'combined_success': 'rows combined from',
+        'files': 'files',
+        'download_combined': '📥 Download all data (CSV)',
+        'no_csv_found': '⚠️ No CSV file found in folder',
+        'advice': '💡 Tip: Go to',
+        'to_create': 'to create new files.',
+        'folder_not_exist': '❌ The data/ folder does not exist.',
+        'create_folder': '💡 Create a data/ folder at the root of your project and place your CSV files there.',
+        
+        # Dashboard
+        'dashboard_header': '📊 Dashboard of cleaned data',
+        'total_ads': '📊 Total Ads',
+        'min_price': '💵 Min Price',
+        'max_price': '💸 Max Price',
+        'stats_by_category': '📈 Statistics by category',
+        'count': 'Count',
+        'avg_price_cfa': 'Average price (CFA)',
+        'min_price_cfa': 'Min price (CFA)',
+        'max_price_cfa': 'Max price (CFA)',
+        'avg_by_category': '💰 Average price by category',
+        'ads_by_category': '📊 Number of ads by category',
+        'top_locations': '📍 Top 10 locations',
+        'explore_data': '🔍 Explore cleaned data',
+        'filter_by_category': 'Filter by category',
+        'ads_displayed': 'ads displayed',
+        'download_clean': '📥 Download cleaned data (CSV)',
+        'no_data_scrape_first': 'ℹ️ No data available. Please scrape data first.',
+        
+        # Forms
+        'forms_header': '📝 Application Evaluation Forms',
+        'forms_desc': 'Your feedback is important to help us improve this application. Thank you for taking a few moments to answer one of these questionnaires.',
+        'kobo_title': '📋 KoboToolbox Form',
+        'kobo_desc': 'Fill out the evaluation form on KoboToolbox to share your experience with us.',
+        'kobo_info': 'This form allows for structured and professional data collection.',
+        'kobo_button': '🔗 Open KoboToolbox form',
+        'kobo_note': '💡 KoboToolbox is a data collection platform used for professional surveys.',
+        'google_title': '📝 Google Forms',
+        'google_desc': 'Prefer Google Forms? Fill out this form to share your comments and suggestions.',
+        'google_info': 'Simple and familiar interface.',
+        'google_button': '🔗 Open Google Forms',
+        'google_note': '💡 Google Forms allows quick and easy access from any device.',
+        'why_evaluate': '❓ Why your evaluation is important',
+        'continuous_improvement': '🎯 Continuous improvement',
+        'improvement_desc': 'Your feedback helps us identify features to improve.',
+        'new_features': '💡 New features',
+        'features_desc': 'Your suggestions guide the development of new features.',
+        'user_experience': '🤝 User experience',
+        'experience_desc': 'Your feedback shapes the evolution of the application.',
+        'thank_you': '✅ Thank you in advance for your contribution!',
+        
+        # Animals
         'dogs': '🐕 Dogs',
         'sheep': '🐑 Sheep',
         'poultry': '🐔 Chickens, rabbits and pigeons',
         'other_animals': '🦎 Other animals',
+        
+        # Footer
         'developed_by': 'Developed with ❤️ by Rafiatou | Data from',
         'rights': '© 2024 - All rights reserved'
     }
@@ -168,12 +308,10 @@ st.markdown("""
         color: #e2e8f0 !important;
     }
     
-    /* Bouton de langue */
-    .language-button {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 999;
+    /* Expander */
+    .streamlit-expanderHeader {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -203,6 +341,8 @@ st.markdown(f"""
 
 # Fonction pour créer la base de données SQLite
 def init_database():
+    if not os.path.exists('data'):
+        os.makedirs('data')
     conn = sqlite3.connect('data/coinafrique_animals.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS animals
@@ -422,6 +562,210 @@ if menu == get_text('menu_scraper'):
                 )
             else:
                 st.warning(get_text('no_data_found'))
+
+# ==================== SECTION 2: TÉLÉCHARGER DONNÉES ====================
+elif menu == get_text('menu_download'):
+    st.header(get_text('download_header'))
+    
+    st.markdown(get_text('download_desc'))
+    
+    data_folder = "data"
+    
+    if os.path.exists(data_folder):
+        csv_files = [f for f in os.listdir(data_folder) if f.endswith(".csv")]
+        
+        if csv_files:
+            st.success(f"✅ {len(csv_files)} {get_text('files_found')} `data/`")
+            
+            st.subheader(get_text('available_files'))
+            
+            for idx, file in enumerate(csv_files, 1):
+                with st.expander(f"📄 {file}"):
+                    try:
+                        df_file = pd.read_csv(os.path.join(data_folder, file))
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric(get_text('rows'), df_file.shape[0])
+                        with col2:
+                            st.metric(get_text('columns'), df_file.shape[1])
+                        with col3:
+                            file_size = os.path.getsize(os.path.join(data_folder, file)) / 1024
+                            st.metric(get_text('size'), f"{file_size:.1f} KB")
+                        
+                        if st.button(f"{get_text('show_data')} {file}", key=f"show_{idx}"):
+                            st.dataframe(df_file, use_container_width=True)
+                        
+                        csv_bytes = df_file.to_csv(index=False).encode("utf-8")
+                        st.download_button(
+                            label=f"{get_text('download_file')} {file}",
+                            data=csv_bytes,
+                            file_name=file,
+                            mime="text/csv",
+                            key=f"download_{idx}"
+                        )
+                    except Exception as e:
+                        st.error(f"❌ {str(e)}")
+            
+            st.markdown("---")
+            st.subheader(get_text('download_all'))
+            
+            if st.button(get_text('combine_download')):
+                try:
+                    all_dfs = []
+                    for file in csv_files:
+                        df_temp = pd.read_csv(os.path.join(data_folder, file))
+                        all_dfs.append(df_temp)
+                    
+                    df_combined = pd.concat(all_dfs, ignore_index=True)
+                    st.success(f"✅ {len(df_combined)} {get_text('combined_success')} {len(csv_files)} {get_text('files')}")
+                    
+                    st.dataframe(df_combined.head(10), use_container_width=True)
+                    
+                    csv_combined = df_combined.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label=get_text('download_combined'),
+                        data=csv_combined,
+                        file_name="coinafrique_animals_all_combined.csv",
+                        mime="text/csv",
+                    )
+                except Exception as e:
+                    st.error(f"❌ {str(e)}")
+        else:
+            st.warning(get_text('no_csv_found') + " `data/`")
+            st.info(f"{get_text('advice')} **{get_text('menu_scraper')}** {get_text('to_create')}")
+    else:
+        st.error(get_text('folder_not_exist'))
+        st.info(get_text('create_folder'))
+
+# ==================== SECTION 3: DASHBOARD ====================
+elif menu == get_text('menu_dashboard'):
+    st.header(get_text('dashboard_header'))
+    
+    df_raw = load_from_database()
+    
+    if not df_raw.empty:
+        df_clean = clean_data(df_raw)
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(get_text('total_ads'), len(df_clean))
+        with col2:
+            st.metric(get_text('avg_price'), f"{df_clean['price_clean'].mean():,.0f} CFA")
+        with col3:
+            st.metric(get_text('min_price'), f"{df_clean['price_clean'].min():,.0f} CFA")
+        with col4:
+            st.metric(get_text('max_price'), f"{df_clean['price_clean'].max():,.0f} CFA")
+        
+        st.subheader(get_text('stats_by_category'))
+        category_stats = df_clean.groupby('category').agg({
+            'price_clean': ['count', 'mean', 'min', 'max']
+        }).round(0)
+        category_stats.columns = [get_text('count'), get_text('avg_price_cfa'), get_text('min_price_cfa'), get_text('max_price_cfa')]
+        st.dataframe(category_stats, use_container_width=True)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader(get_text('avg_by_category'))
+            avg_prices = df_clean.groupby('category')['price_clean'].mean().sort_values(ascending=False)
+            st.bar_chart(avg_prices)
+        
+        with col2:
+            st.subheader(get_text('ads_by_category'))
+            counts = df_clean['category'].value_counts()
+            st.bar_chart(counts)
+        
+        st.subheader(get_text('top_locations'))
+        top_locations = df_clean['address'].value_counts().head(10)
+        st.bar_chart(top_locations)
+        
+        st.subheader(get_text('explore_data'))
+        
+        selected_cat = st.multiselect(
+            get_text('filter_by_category'),
+            options=df_clean['category'].unique(),
+            default=df_clean['category'].unique()
+        )
+        
+        df_filtered = df_clean[df_clean['category'].isin(selected_cat)]
+        
+        st.write(f"**{len(df_filtered)}** {get_text('ads_displayed')}")
+        st.dataframe(df_filtered[['category', 'name', 'price', 'price_clean', 'address']], use_container_width=True)
+        
+        csv_clean = df_clean.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label=get_text('download_clean'),
+            data=csv_clean,
+            file_name='coinafrique_animals_clean.csv',
+            mime='text/csv',
+        )
+        
+    else:
+        st.info(get_text('no_data_scrape_first'))
+
+# ==================== SECTION 4: FORMULAIRES ====================
+elif menu == get_text('menu_forms'):
+    st.header(get_text('forms_header'))
+    
+    st.markdown(get_text('forms_desc'))
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader(get_text('kobo_title'))
+        st.markdown(get_text('kobo_desc'))
+        st.markdown(get_text('kobo_info'))
+        
+        st.link_button(
+            get_text('kobo_button'),
+            "https://ee.kobotoolbox.org/x/JWIzi1ib",
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        st.info(get_text('kobo_note'))
+    
+    with col2:
+        st.subheader(get_text('google_title'))
+        st.markdown(get_text('google_desc'))
+        st.markdown(get_text('google_info'))
+        
+        st.link_button(
+            get_text('google_button'),
+            "https://docs.google.com/forms/d/e/1FAIpQLSfZWFZCFv5vK3ULo0TK5kJAhojavgBRrAk8LJhT64afKlnhYw/viewform?usp=dialog",
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        st.info(get_text('google_note'))
+    
+    st.markdown("---")
+    
+    st.subheader(get_text('why_evaluate'))
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(f"""
+        ### {get_text('continuous_improvement')}
+        {get_text('improvement_desc')}
+        """)
+    
+    with col2:
+        st.markdown(f"""
+        ### {get_text('new_features')}
+        {get_text('features_desc')}
+        """)
+    
+    with col3:
+        st.markdown(f"""
+        ### {get_text('user_experience')}
+        {get_text('experience_desc')}
+        """)
+    
+    st.success(get_text('thank_you'))
 
 # Footer
 st.markdown("---")
