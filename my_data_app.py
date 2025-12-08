@@ -31,7 +31,7 @@ def init_database():
     conn.commit()
     conn.close()
 
-# Fonction de scraping adaptée de votre code
+# Fonction de scraping améliorée avec gestion des valeurs manquantes
 def scrape_all_pages(base_url, category_name, max_pages=10):
     df = pd.DataFrame()
 
@@ -50,23 +50,41 @@ def scrape_all_pages(base_url, category_name, max_pages=10):
 
             data = []
             for container in containers:
+                # Extraire le nom (si absent, mettre "Non spécifié")
                 try:
-                    name = container.find('p', 'ad__card-description').text
-                    price = container.find('p', 'ad__card-price').text.replace('CFA', '').replace(' ', '')
-                    adresse = container.find('p', 'ad__card-location').span.text
-                    image_url = container.find('img', class_='ad__card-img')['src']
-
-                    dic = {
-                        'category': category_name,
-                        'name': name,
-                        'price': price,
-                        'address': adresse,
-                        'image_url': image_url,
-                        'scrape_date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    data.append(dic)
+                    name = container.find('p', 'ad__card-description').text.strip()
                 except:
-                    pass
+                    name = "Non spécifié"
+                
+                # Extraire le prix (si absent, mettre "0")
+                try:
+                    price = container.find('p', 'ad__card-price').text.replace('CFA', '').replace(' ', '').strip()
+                    if not price:
+                        price = "0"
+                except:
+                    price = "0"
+                
+                # Extraire l'adresse (si absente, mettre "Non spécifiée")
+                try:
+                    adresse = container.find('p', 'ad__card-location').span.text.strip()
+                except:
+                    adresse = "Non spécifiée"
+                
+                # Extraire l'URL de l'image (si absente, mettre "Non disponible")
+                try:
+                    image_url = container.find('img', class_='ad__card-img')['src']
+                except:
+                    image_url = "Non disponible"
+
+                dic = {
+                    'category': category_name,
+                    'name': name,
+                    'price': price,
+                    'address': adresse,
+                    'image_url': image_url,
+                    'scrape_date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                data.append(dic)
 
             DF = pd.DataFrame(data)
             df = pd.concat([df, DF], axis=0).reset_index(drop=True)
@@ -137,7 +155,7 @@ menu = st.sidebar.radio("📋 Menu", [
     "🔍 Scraper des données", 
     "📥 Télécharger données Web Scraper", 
     "📊 Dashboard (données nettoyées)", 
-    "📝 Formulaire d'évaluation"
+    "📝 Formulaires d'évaluation"
 ])
 
 # ==================== SECTION 1: SCRAPER ====================
@@ -311,90 +329,77 @@ elif menu == "📊 Dashboard (données nettoyées)":
     else:
         st.info("ℹ️ Aucune donnée disponible. Veuillez d'abord scraper des données.")
 
-# ==================== SECTION 4: FORMULAIRE D'ÉVALUATION ====================
-elif menu == "📝 Formulaire d'évaluation":
-    st.header("📝 Formulaire d'évaluation de l'application")
+# ==================== SECTION 4: FORMULAIRES D'ÉVALUATION ====================
+elif menu == "📝 Formulaires d'évaluation":
+    st.header("📝 Formulaires d'évaluation de l'application")
     
     st.markdown("""
     Votre avis est important pour nous aider à améliorer cette application. 
-    Merci de prendre quelques instants pour répondre à ce questionnaire.
+    Merci de prendre quelques instants pour répondre à l'un de ces questionnaires.
     """)
     
-    with st.form("evaluation_form"):
-        st.subheader("👤 Informations (optionnelles)")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📋 Formulaire KoboToolbox")
+        st.markdown("""
+        Remplissez le formulaire d'évaluation sur **KoboToolbox** pour nous faire part de votre expérience.
         
-        col1, col2 = st.columns(2)
-        with col1:
-            nom = st.text_input("Nom")
-        with col2:
-            email = st.text_input("Email")
+        Ce formulaire permet une collecte de données structurée et professionnelle.
+        """)
         
-        st.subheader("⭐ Évaluation")
-        
-        rating = st.slider("Note globale de l'application", 1, 5, 3, help="1 = Très mauvais, 5 = Excellent")
-        
-        ease_of_use = st.select_slider(
-            "Facilité d'utilisation",
-            options=["Très difficile", "Difficile", "Moyen", "Facile", "Très facile"]
+        st.link_button(
+            "🔗 Ouvrir le formulaire KoboToolbox",
+            "https://ee.kobotoolbox.org/x/JWIzi1ib",
+            use_container_width=True
         )
         
-        features = st.multiselect(
-            "Quelles fonctionnalités avez-vous utilisées ?",
-            ["Scraping de données", "Téléchargement données brutes", "Dashboard", "Toutes les fonctionnalités"]
+        st.markdown("---")
+        st.info("💡 **KoboToolbox** est une plateforme de collecte de données utilisée pour des enquêtes professionnelles.")
+    
+    with col2:
+        st.subheader("📝 Formulaire Google Forms")
+        st.markdown("""
+        Vous préférez **Google Forms** ? Remplissez ce formulaire pour partager vos commentaires et suggestions.
+        
+        Interface simple et familière.
+        """)
+        
+        st.link_button(
+            "🔗 Ouvrir le formulaire Google Forms",
+            "https://docs.google.com/forms/d/e/1FAIpQLSfZWFZCFv5vK3ULo0TK5kJAhojavgBRrAk8LJhT64afKlnhYw/viewform?usp=dialog",
+            use_container_width=True
         )
         
-        most_useful = st.radio(
-            "Quelle fonctionnalité trouvez-vous la plus utile ?",
-            ["Scraping", "Téléchargement", "Dashboard", "Autre"]
-        )
-        
-        improvements = st.text_area(
-            "Suggestions d'amélioration",
-            placeholder="Quelles fonctionnalités aimeriez-vous voir ajoutées ?"
-        )
-        
-        feedback = st.text_area(
-            "Commentaires généraux",
-            placeholder="Partagez votre expérience avec l'application..."
-        )
-        
-        submit = st.form_submit_button("✅ Soumettre l'évaluation", type="primary")
-        
-        if submit:
-            evaluation_data = {
-                'nom': nom if nom else 'Anonyme',
-                'email': email if email else 'N/A',
-                'rating': rating,
-                'ease_of_use': ease_of_use,
-                'features': ', '.join(features) if features else 'Aucune',
-                'most_useful': most_useful,
-                'improvements': improvements,
-                'feedback': feedback,
-                'date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            # Sauvegarder dans SQLite
-            conn = sqlite3.connect('data/coinafrique_animals.db')
-            c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS evaluations
-                         (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                          nom TEXT, email TEXT, rating INTEGER,
-                          ease_of_use TEXT, features TEXT, most_useful TEXT,
-                          improvements TEXT, feedback TEXT, date TEXT)''')
-            
-            pd.DataFrame([evaluation_data]).to_sql('evaluations', conn, if_exists='append', index=False)
-            conn.close()
-            
-            st.success("✅ Merci pour votre évaluation !")
-            st.balloons()
-            
-            # Afficher un résumé
-            st.info(f"""
-            **Résumé de votre évaluation:**
-            - Note: {rating}/5 ⭐
-            - Facilité: {ease_of_use}
-            - Fonctionnalité préférée: {most_useful}
-            """)
+        st.markdown("---")
+        st.info("💡 **Google Forms** permet un accès rapide et facile depuis n'importe quel appareil.")
+    
+    st.markdown("---")
+    
+    # Section pourquoi évaluer
+    st.subheader("❓ Pourquoi votre évaluation est importante")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        ### 🎯 Amélioration continue
+        Vos retours nous aident à identifier les fonctionnalités à améliorer.
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### 💡 Nouvelles fonctionnalités
+        Vos suggestions guident le développement de nouvelles features.
+        """)
+    
+    with col3:
+        st.markdown("""
+        ### 🤝 Expérience utilisateur
+        Votre avis façonne l'évolution de l'application.
+        """)
+    
+    st.success("✅ Merci d'avance pour votre contribution !")
 
 # Footer
 st.markdown("---")
