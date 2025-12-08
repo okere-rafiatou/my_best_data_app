@@ -4,27 +4,114 @@ import sqlite3
 from requests import get
 from bs4 import BeautifulSoup as bs
 import time
-from io import BytesIO
 
 # Configuration de la page
 st.set_page_config(page_title="CoinAfrique Animal Scraper", layout="wide")
 
-st.markdown("<h1 style='text-align: center; color: #FF6B35;'>🐾 CoinAfrique Animal Data App</h1>", unsafe_allow_html=True)
+# Style personnalisé avec le thème sombre
+st.markdown("""
+<style>
+    /* Background principal */
+    .stApp {
+        background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+    }
+    
+    /* Sidebar */
+    [data-testid=stSidebar] {
+        background: linear-gradient(180deg, #1e2433 0%, #252d3d 100%);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Cartes et containers */
+    .stMarkdown, .stDataFrame {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 10px;
+    }
+    
+    /* Titres */
+    h1, h2, h3 {
+        color: #ffffff !important;
+    }
+    
+    /* Métriques */
+    [data-testid="stMetricValue"] {
+        color: #4FD1C5 !important;
+        font-weight: bold;
+    }
+    
+    /* Boutons */
+    .stButton>button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.5rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    /* Radio buttons dans la sidebar */
+    .stRadio > label {
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 10px;
+        border-radius: 8px;
+        margin: 5px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .stRadio > label:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateX(5px);
+    }
+    
+    /* Texte */
+    p, span, label {
+        color: #e2e8f0 !important;
+    }
+    
+    /* Inputs */
+    .stTextInput>div>div>input, .stSelectbox>div>div>select {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+    }
+    
+    /* Tableaux */
+    .dataframe {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: #e2e8f0 !important;
+    }
+    
+    /* Success/Info/Warning boxes */
+    .stSuccess, .stInfo, .stWarning {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("<h1 style='text-align: center; color: #4FD1C5; text-shadow: 0 0 20px rgba(79, 209, 197, 0.5);'>🐾 COINAFRIQUE ANIMAL DATA APP</h1>", unsafe_allow_html=True)
 
 st.markdown("""
-Cette application vous permet de :
-* **Scraper des données** d'animaux sur plusieurs pages de CoinAfrique
-* **Télécharger des données** déjà scrapées (non nettoyées)
-* **Visualiser un dashboard** avec les données nettoyées
-* **Remplir un formulaire** d'évaluation de l'application
-
-**Librairies Python:** pandas, streamlit, sqlite3, beautifulsoup4, requests
-**Source de données:** [CoinAfrique Sénégal](https://sn.coinafrique.com/)
-""")
+<div style='background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 10px; border-left: 4px solid #4FD1C5;'>
+Cette application vous permet de télécharger des données scrapées sur les animaux de CoinAfrique Sénégal
+<ul style='margin-top: 10px;'>
+    <li><b>Librairies Python:</b> pandas, streamlit, sqlite3, beautifulsoup4, requests</li>
+    <li><b>Source de données:</b> <a href='https://sn.coinafrique.com/' target='_blank' style='color: #4FD1C5;'>CoinAfrique Sénégal</a></li>
+</ul>
+</div>
+""", unsafe_allow_html=True)
 
 # Fonction pour créer la base de données SQLite
 def init_database():
-    conn = sqlite3.connect('coinafrique_animals.db')
+    conn = sqlite3.connect('data/coinafrique_animals.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS animals
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,254 +124,493 @@ def init_database():
     conn.commit()
     conn.close()
 
-# Fonction de scraping
-def scrape_category(base_url, category_name, max_pages=10):
+# Fonction de scraping améliorée avec gestion des valeurs manquantes
+def scrape_all_pages(base_url, category_name, max_pages=10):
     df = pd.DataFrame()
-    
+
     for page in range(1, max_pages + 1):
         try:
+            print(f"Scraping page {page}...")
+            
             url = f"{base_url}?page={page}"
             res = get(url, timeout=10)
             soup = bs(res.content, 'html.parser')
             containers = soup.find_all('div', class_='col s6 m4 l3')
-            
+
             if not containers:
+                print("Plus d'annonces trouvées. Fin du scraping.")
                 break
-            
+
             data = []
             for container in containers:
+                # Extraire le nom (si absent, mettre "Non spécifié")
                 try:
                     name = container.find('p', 'ad__card-description').text.strip()
-                    price = container.find('p', 'ad__card-price').text.replace('CFA', '').replace(' ', '').strip()
-                    adresse = container.find('p', 'ad__card-location').span.text.strip()
-                    image_url = container.find('img', class_='ad__card-img')['src']
-                    
-                    dic = {
-                        'category': category_name,
-                        'name': name,
-                        'price': price,
-                        'address': adresse,
-                        'image_url': image_url,
-                        'scrape_date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-                    }
-                    data.append(dic)
                 except:
-                    pass
-            
+                    name = "Non spécifié"
+                
+                # Extraire le prix (si absent, mettre "0")
+                try:
+                    price = container.find('p', 'ad__card-price').text.replace('CFA', '').replace(' ', '').strip()
+                    if not price:
+                        price = "0"
+                except:
+                    price = "0"
+                
+                # Extraire l'adresse (si absente, mettre "Non spécifiée")
+                try:
+                    adresse = container.find('p', 'ad__card-location').span.text.strip()
+                except:
+                    adresse = "Non spécifiée"
+                
+                # Extraire l'URL de l'image (si absente, mettre "Non disponible")
+                try:
+                    image_url = container.find('img', class_='ad__card-img')['src']
+                except:
+                    image_url = "Non disponible"
+
+                dic = {
+                    'category': category_name,
+                    'name': name,
+                    'price': price,
+                    'address': adresse,
+                    'image_url': image_url,
+                    'scrape_date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                data.append(dic)
+
             DF = pd.DataFrame(data)
             df = pd.concat([df, DF], axis=0).reset_index(drop=True)
-            time.sleep(1)  # Pause entre les pages
+            time.sleep(1)
             
         except Exception as e:
-            st.warning(f"Erreur page {page}: {str(e)}")
+            print(f"Erreur page {page}: {str(e)}")
             break
-    
+
     return df
 
 # Fonction pour nettoyer les données
 def clean_data(df):
     df_clean = df.copy()
     
-    # Nettoyer les prix
+    # Nettoyer les prix (enlever les caractères non numériques)
     df_clean['price_clean'] = df_clean['price'].str.replace(r'\D', '', regex=True)
     df_clean['price_clean'] = pd.to_numeric(df_clean['price_clean'], errors='coerce')
     
     # Supprimer les doublons
     df_clean = df_clean.drop_duplicates(subset=['name', 'address'])
     
-    # Supprimer les lignes avec des valeurs manquantes importantes
-    df_clean = df_clean.dropna(subset=['name', 'price_clean'])
+    # Supprimer les lignes avec des prix manquants
+    df_clean = df_clean.dropna(subset=['price_clean'])
     
     return df_clean
 
 # Fonction pour sauvegarder dans SQLite
 def save_to_database(df):
-    conn = sqlite3.connect('coinafrique_animals.db')
+    conn = sqlite3.connect('data/coinafrique_animals.db')
     df.to_sql('animals', conn, if_exists='append', index=False)
     conn.close()
 
 # Fonction pour charger depuis SQLite
 def load_from_database():
-    conn = sqlite3.connect('coinafrique_animals.db')
-    df = pd.read_sql_query("SELECT * FROM animals", conn)
-    conn.close()
-    return df
+    try:
+        conn = sqlite3.connect('data/coinafrique_animals.db')
+        df = pd.read_sql_query("SELECT * FROM animals", conn)
+        conn.close()
+        return df
+    except:
+        return pd.DataFrame()
+
+# Fonction pour afficher les données (adaptée de votre code)
+def load_data(dataframe, title, key):
+    st.markdown("""
+    <style>
+    div.stButton {text-align:center}
+    </style>""", unsafe_allow_html=True)
+    
+    if st.button(title, key=key):
+        st.subheader('Dimension des données')
+        st.write('Dimension: ' + str(dataframe.shape[0]) + ' lignes et ' + str(dataframe.shape[1]) + ' colonnes.')
+        st.dataframe(dataframe)
+
+# Styles pour les boutons (adapté de votre code)
+st.markdown('''<style> .stButton>button {
+    font-size: 12px;
+    height: 3em;
+    width: 25em;
+}</style>''', unsafe_allow_html=True)
 
 # Initialiser la base de données
 init_database()
 
-# Sidebar pour la navigation
-menu = st.sidebar.radio("Menu", ["🔍 Scraper des données", "📥 Télécharger données brutes", "📊 Dashboard", "📝 Formulaire d'évaluation"])
+# ==================== SIDEBAR ====================
+st.sidebar.markdown("""
+<div style='text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-bottom: 20px;'>
+    <h2 style='color: white; margin: 0; font-size: 24px;'>🐾 Animal Data</h2>
+    <p style='color: rgba(255,255,255,0.9); font-size: 14px; margin: 5px 0 0 0;'>Application de scraping</p>
+</div>
+""", unsafe_allow_html=True)
 
-# SECTION 1: Scraper des données
-if menu == "🔍 Scraper des données":
-    st.header("Scraper des données CoinAfrique")
-    
-    categories = {
-        "Chiens": "https://sn.coinafrique.com/categorie/chiens",
-        "Moutons": "https://sn.coinafrique.com/categorie/moutons",
-        "Poules, lapins et pigeons": "https://sn.coinafrique.com/categorie/poules-lapins-et-pigeons",
-        "Autres animaux": "https://sn.coinafrique.com/categorie/autres-animaux"
+st.sidebar.markdown("---")
+
+# Navigation avec style
+st.sidebar.markdown("""
+<style>
+    [data-testid=stSidebar] {
+        background: linear-gradient(180deg, #1e2433 0%, #252d3d 100%);
     }
     
-    selected_category = st.selectbox("Sélectionner une catégorie", list(categories.keys()))
-    max_pages = st.slider("Nombre de pages à scraper", 1, 20, 5)
+    /* Style pour les options du radio */
+    .stRadio > div {
+        background-color: transparent;
+    }
     
-    if st.button("🚀 Lancer le scraping", key="scrape_btn"):
+    .stRadio > div > label {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 12px 15px;
+        border-radius: 10px;
+        margin: 8px 0;
+        display: block;
+        transition: all 0.3s ease;
+        border-left: 3px solid transparent;
+        color: #e2e8f0 !important;
+    }
+    
+    .stRadio > div > label:hover {
+        background: rgba(102, 126, 234, 0.2);
+        border-left: 3px solid #667eea;
+        transform: translateX(5px);
+    }
+    
+    .stRadio > div > label[data-checked="true"] {
+        background: linear-gradient(90deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+        border-left: 3px solid #4FD1C5;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("<h3 style='color: #4FD1C5; margin-bottom: 15px;'>📋 Navigation</h3>", unsafe_allow_html=True)
+
+menu = st.sidebar.radio(
+    "Choisissez une section :",
+    [
+        "🔍 Scraper des données", 
+        "📥 Télécharger données Web Scraper", 
+        "📊 Dashboard (données nettoyées)", 
+        "📝 Formulaires d'évaluation"
+    ],
+    label_visibility="collapsed"
+)
+
+st.sidebar.markdown("---")
+
+# Statistiques rapides dans la sidebar
+st.sidebar.markdown("<h3 style='color: #4FD1C5; margin-bottom: 15px;'>📊 Statistiques rapides</h3>", unsafe_allow_html=True)
+try:
+    df_stats = load_from_database()
+    if not df_stats.empty:
+        col1, col2 = st.sidebar.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div style='background: rgba(79, 209, 197, 0.1); padding: 15px; border-radius: 10px; text-align: center;'>
+                <p style='color: #4FD1C5; font-size: 24px; font-weight: bold; margin: 0;'>{len(df_stats)}</p>
+                <p style='color: #e2e8f0; font-size: 12px; margin: 5px 0 0 0;'>Annonces</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div style='background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 10px; text-align: center;'>
+                <p style='color: #667eea; font-size: 24px; font-weight: bold; margin: 0;'>{df_stats['category'].nunique()}</p>
+                <p style='color: #e2e8f0; font-size: 12px; margin: 5px 0 0 0;'>Catégories</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        df_clean_stats = clean_data(df_stats)
+        if not df_clean_stats.empty and 'price_clean' in df_clean_stats.columns:
+            avg_price = df_clean_stats['price_clean'].mean()
+            st.markdown(f"""
+            <div style='background: rgba(118, 75, 162, 0.1); padding: 15px; border-radius: 10px; text-align: center; margin-top: 10px;'>
+                <p style='color: #764ba2; font-size: 20px; font-weight: bold; margin: 0;'>{avg_price:,.0f} CFA</p>
+                <p style='color: #e2e8f0; font-size: 12px; margin: 5px 0 0 0;'>Prix moyen</p>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.sidebar.info("Aucune donnée disponible")
+except:
+    st.sidebar.info("Aucune donnée disponible")
+
+st.sidebar.markdown("---")
+
+# Informations supplémentaires
+st.sidebar.markdown("<h3 style='color: #4FD1C5; margin-bottom: 15px;'>ℹ️ À propos</h3>", unsafe_allow_html=True)
+st.sidebar.markdown("""
+<div style='background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; font-size: 13px; color: #cbd5e0;'>
+📦 <b style='color: #4FD1C5;'>Version:</b> 1.0.0<br>
+🔧 <b style='color: #4FD1C5;'>Tech:</b> Streamlit + BeautifulSoup<br>
+🌐 <b style='color: #4FD1C5;'>Source:</b> CoinAfrique SN<br>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+
+# Liens utiles
+with st.sidebar.expander("🔗 Liens utiles"):
+    st.markdown("""
+    <div style='font-size: 13px;'>
+    • <a href='https://sn.coinafrique.com' target='_blank' style='color: #4FD1C5;'>CoinAfrique</a><br>
+    • <a href='https://docs.streamlit.io' target='_blank' style='color: #4FD1C5;'>Documentation Streamlit</a><br>
+    • <a href='https://www.crummy.com/software/BeautifulSoup/bs4/doc/' target='_blank' style='color: #4FD1C5;'>BeautifulSoup Docs</a>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==================== SECTION 1: SCRAPER ====================
+if menu == "🔍 Scraper des données":
+    st.header("🔍 Scraper des données sur plusieurs pages")
+    
+    st.info("⚠️ Le scraping peut prendre quelques minutes selon le nombre de pages.")
+    
+    categories = {
+        "🐕 Chiens": "https://sn.coinafrique.com/categorie/chiens",
+        "🐑 Moutons": "https://sn.coinafrique.com/categorie/moutons",
+        "🐔 Poules, lapins et pigeons": "https://sn.coinafrique.com/categorie/poules-lapins-et-pigeons",
+        "🦎 Autres animaux": "https://sn.coinafrique.com/categorie/autres-animaux"
+    }
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        selected_category = st.selectbox("Catégorie à scraper", list(categories.keys()))
+    
+    with col2:
+        max_pages = st.slider("Nombre de pages", 1, 20, 5)
+    
+    if st.button("🚀 Lancer le scraping", type="primary"):
         with st.spinner(f"Scraping en cours pour {selected_category}..."):
-            df_scraped = scrape_category(categories[selected_category], selected_category, max_pages)
+            category_name = selected_category.split(' ', 1)[1]  # Enlever l'emoji
+            df_scraped = scrape_all_pages(categories[selected_category], category_name, max_pages)
             
             if not df_scraped.empty:
-                st.success(f"✅ {len(df_scraped)} annonces scrapées !")
+                st.success(f"✅ {len(df_scraped)} annonces scrapées avec succès !")
                 
                 # Sauvegarder dans la base de données
                 save_to_database(df_scraped)
                 st.info("💾 Données sauvegardées dans la base de données SQLite")
                 
                 # Afficher un aperçu
-                st.subheader("Aperçu des données scrapées")
-                st.dataframe(df_scraped)
+                st.subheader("📋 Aperçu des données")
+                st.dataframe(df_scraped.head(10))
+                
+                # Télécharger immédiatement
+                csv = df_scraped.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label=f"📥 Télécharger {category_name} (CSV)",
+                    data=csv,
+                    file_name=f'{category_name.lower().replace(" ", "_")}.csv',
+                    mime='text/csv',
+                )
             else:
-                st.warning("Aucune donnée trouvée.")
+                st.warning("⚠️ Aucune donnée trouvée.")
 
-# SECTION 2: Télécharger données brutes
-elif menu == "📥 Télécharger données brutes":
-    st.header("Télécharger les données brutes (non nettoyées)")
+# ==================== SECTION 2: TÉLÉCHARGER DONNÉES BRUTES ====================
+elif menu == "📥 Télécharger données Web Scraper":
+    st.header("📥 Télécharger les données brutes (non nettoyées)")
     
-    try:
-        df_raw = load_from_database()
-        
-        if not df_raw.empty:
-            st.write(f"**Total d'annonces:** {len(df_raw)}")
-            st.write(f"**Dimensions:** {df_raw.shape[0]} lignes × {df_raw.shape[1]} colonnes")
-            
-            # Grouper par catégorie
-            category_counts = df_raw['category'].value_counts()
-            st.write("**Répartition par catégorie:**")
-            st.dataframe(category_counts)
-            
-            # Bouton de téléchargement
-            csv = df_raw.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Télécharger toutes les données (CSV)",
-                data=csv,
-                file_name='coinafrique_animals_raw.csv',
-                mime='text/csv',
-            )
-            
-            # Afficher les données
-            if st.checkbox("Afficher toutes les données"):
-                st.dataframe(df_raw)
-        else:
-            st.info("Aucune donnée disponible. Veuillez d'abord scraper des données.")
-    except Exception as e:
-        st.error(f"Erreur lors du chargement: {str(e)}")
-
-# SECTION 3: Dashboard
-elif menu == "📊 Dashboard":
-    st.header("Dashboard des données nettoyées")
+    st.markdown("""
+    Cette section vous permet de télécharger les données scrapées avec Web Scraper (format brut, sans nettoyage).
+    """)
     
-    try:
-        df_raw = load_from_database()
-        
-        if not df_raw.empty:
-            df_clean = clean_data(df_raw)
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Total d'annonces", len(df_clean))
-            with col2:
-                st.metric("Prix moyen", f"{df_clean['price_clean'].mean():,.0f} CFA")
-            with col3:
-                st.metric("Catégories", df_clean['category'].nunique())
-            
-            st.subheader("📈 Statistiques par catégorie")
-            category_stats = df_clean.groupby('category').agg({
-                'price_clean': ['count', 'mean', 'min', 'max']
-            }).round(0)
-            category_stats.columns = ['Nombre', 'Prix moyen', 'Prix min', 'Prix max']
-            st.dataframe(category_stats)
-            
-            st.subheader("💰 Distribution des prix")
-            st.bar_chart(df_clean.groupby('category')['price_clean'].mean())
-            
-            st.subheader("📍 Répartition par localisation")
-            top_locations = df_clean['address'].value_counts().head(10)
-            st.bar_chart(top_locations)
-            
-            st.subheader("🔍 Explorer les données nettoyées")
-            st.dataframe(df_clean)
-            
-            # Télécharger les données nettoyées
-            csv_clean = df_clean.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="📥 Télécharger les données nettoyées (CSV)",
-                data=csv_clean,
-                file_name='coinafrique_animals_clean.csv',
-                mime='text/csv',
-            )
-        else:
-            st.info("Aucune donnée disponible. Veuillez d'abord scraper des données.")
-    except Exception as e:
-        st.error(f"Erreur: {str(e)}")
-
-# SECTION 4: Formulaire d'évaluation
-elif menu == "📝 Formulaire d'évaluation":
-    st.header("Formulaire d'évaluation de l'application")
+    df_raw = load_from_database()
     
-    with st.form("evaluation_form"):
-        st.subheader("Votre avis compte !")
+    if not df_raw.empty:
+        col1, col2, col3 = st.columns(3)
         
-        nom = st.text_input("Nom (optionnel)")
-        email = st.text_input("Email (optionnel)")
+        with col1:
+            st.metric("📊 Total d'annonces", len(df_raw))
+        with col2:
+            st.metric("📂 Catégories", df_raw['category'].nunique())
+        with col3:
+            st.metric("📅 Dernière mise à jour", df_raw['scrape_date'].max()[:10] if 'scrape_date' in df_raw.columns else "N/A")
         
-        rating = st.slider("Notez l'application", 1, 5, 3)
+        # Grouper par catégorie
+        st.subheader("📑 Répartition par catégorie")
+        category_counts = df_raw['category'].value_counts().reset_index()
+        category_counts.columns = ['Catégorie', 'Nombre d\'annonces']
+        st.dataframe(category_counts, use_container_width=True)
         
-        ease_of_use = st.select_slider(
-            "Facilité d'utilisation",
-            options=["Très difficile", "Difficile", "Moyen", "Facile", "Très facile"]
+        # Charger les données par catégorie (comme votre code original)
+        st.subheader("📁 Données par catégorie")
+        
+        categories_list = df_raw['category'].unique()
+        
+        for idx, cat in enumerate(categories_list, 1):
+            df_cat = df_raw[df_raw['category'] == cat]
+            load_data(df_cat, f"Données {cat}", str(idx))
+        
+        # Télécharger toutes les données
+        st.subheader("💾 Télécharger toutes les données")
+        csv_all = df_raw.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Télécharger toutes les données (CSV)",
+            data=csv_all,
+            file_name='coinafrique_animals_all.csv',
+            mime='text/csv',
         )
         
-        features = st.multiselect(
-            "Quelles fonctionnalités avez-vous utilisées ?",
-            ["Scraping", "Téléchargement", "Dashboard", "Toutes"]
+    else:
+        st.info("ℹ️ Aucune donnée disponible. Veuillez d'abord scraper des données.")
+        st.markdown("👉 Allez dans **🔍 Scraper des données** pour commencer.")
+
+# ==================== SECTION 3: DASHBOARD ====================
+elif menu == "📊 Dashboard (données nettoyées)":
+    st.header("📊 Dashboard des données nettoyées")
+    
+    df_raw = load_from_database()
+    
+    if not df_raw.empty:
+        df_clean = clean_data(df_raw)
+        
+        # Métriques principales
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("📊 Annonces totales", len(df_clean))
+        with col2:
+            st.metric("💰 Prix moyen", f"{df_clean['price_clean'].mean():,.0f} CFA")
+        with col3:
+            st.metric("💵 Prix min", f"{df_clean['price_clean'].min():,.0f} CFA")
+        with col4:
+            st.metric("💸 Prix max", f"{df_clean['price_clean'].max():,.0f} CFA")
+        
+        # Statistiques par catégorie
+        st.subheader("📈 Statistiques par catégorie")
+        category_stats = df_clean.groupby('category').agg({
+            'price_clean': ['count', 'mean', 'min', 'max']
+        }).round(0)
+        category_stats.columns = ['Nombre', 'Prix moyen (CFA)', 'Prix min (CFA)', 'Prix max (CFA)']
+        st.dataframe(category_stats, use_container_width=True)
+        
+        # Graphiques
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("💰 Prix moyen par catégorie")
+            avg_prices = df_clean.groupby('category')['price_clean'].mean().sort_values(ascending=False)
+            st.bar_chart(avg_prices)
+        
+        with col2:
+            st.subheader("📊 Nombre d'annonces par catégorie")
+            counts = df_clean['category'].value_counts()
+            st.bar_chart(counts)
+        
+        # Top localisations
+        st.subheader("📍 Top 10 des localisations")
+        top_locations = df_clean['address'].value_counts().head(10)
+        st.bar_chart(top_locations)
+        
+        # Explorer les données
+        st.subheader("🔍 Explorer les données nettoyées")
+        
+        # Filtre par catégorie
+        selected_cat = st.multiselect(
+            "Filtrer par catégorie",
+            options=df_clean['category'].unique(),
+            default=df_clean['category'].unique()
         )
         
-        feedback = st.text_area("Commentaires et suggestions")
+        df_filtered = df_clean[df_clean['category'].isin(selected_cat)]
         
-        submit = st.form_submit_button("Soumettre l'évaluation")
+        st.write(f"**{len(df_filtered)}** annonces affichées")
+        st.dataframe(df_filtered[['category', 'name', 'price', 'price_clean', 'address']], use_container_width=True)
         
-        if submit:
-            # Sauvegarder l'évaluation
-            evaluation_data = {
-                'nom': nom,
-                'email': email,
-                'rating': rating,
-                'ease_of_use': ease_of_use,
-                'features': ', '.join(features),
-                'feedback': feedback,
-                'date': pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            
-            conn = sqlite3.connect('coinafrique_animals.db')
-            c = conn.cursor()
-            c.execute('''CREATE TABLE IF NOT EXISTS evaluations
-                         (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                          nom TEXT, email TEXT, rating INTEGER,
-                          ease_of_use TEXT, features TEXT,
-                          feedback TEXT, date TEXT)''')
-            
-            pd.DataFrame([evaluation_data]).to_sql('evaluations', conn, if_exists='append', index=False)
-            conn.close()
-            
-            st.success("✅ Merci pour votre évaluation !")
-            st.balloons()
+        # Télécharger les données nettoyées
+        csv_clean = df_clean.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="📥 Télécharger les données nettoyées (CSV)",
+            data=csv_clean,
+            file_name='coinafrique_animals_clean.csv',
+            mime='text/csv',
+        )
+        
+    else:
+        st.info("ℹ️ Aucune donnée disponible. Veuillez d'abord scraper des données.")
+
+# ==================== SECTION 4: FORMULAIRES D'ÉVALUATION ====================
+elif menu == "📝 Formulaires d'évaluation":
+    st.header("📝 Formulaires d'évaluation de l'application")
+    
+    st.markdown("""
+    Votre avis est important pour nous aider à améliorer cette application. 
+    Merci de prendre quelques instants pour répondre à l'un de ces questionnaires.
+    """)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.subheader("📋 Formulaire KoboToolbox")
+        st.markdown("""
+        Remplissez le formulaire d'évaluation sur **KoboToolbox** pour nous faire part de votre expérience.
+        
+        Ce formulaire permet une collecte de données structurée et professionnelle.
+        """)
+        
+        st.link_button(
+            "🔗 Ouvrir le formulaire KoboToolbox",
+            "https://ee.kobotoolbox.org/x/JWIzi1ib",
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        st.info("💡 **KoboToolbox** est une plateforme de collecte de données utilisée pour des enquêtes professionnelles.")
+    
+    with col2:
+        st.subheader("📝 Formulaire Google Forms")
+        st.markdown("""
+        Vous préférez **Google Forms** ? Remplissez ce formulaire pour partager vos commentaires et suggestions.
+        
+        Interface simple et familière.
+        """)
+        
+        st.link_button(
+            "🔗 Ouvrir le formulaire Google Forms",
+            "https://docs.google.com/forms/d/e/1FAIpQLSfZWFZCFv5vK3ULo0TK5kJAhojavgBRrAk8LJhT64afKlnhYw/viewform?usp=dialog",
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        st.info("💡 **Google Forms** permet un accès rapide et facile depuis n'importe quel appareil.")
+    
+    st.markdown("---")
+    
+    # Section pourquoi évaluer
+    st.subheader("❓ Pourquoi votre évaluation est importante")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        ### 🎯 Amélioration continue
+        Vos retours nous aident à identifier les fonctionnalités à améliorer.
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### 💡 Nouvelles fonctionnalités
+        Vos suggestions guident le développement de nouvelles features.
+        """)
+    
+    with col3:
+        st.markdown("""
+        ### 🤝 Expérience utilisateur
+        Votre avis façonne l'évolution de l'application.
+        """)
+    
+    st.success("✅ Merci d'avance pour votre contribution !")
 
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style='text-align: center'>
-    <p>Développé avec ❤️ par Streamlit | Données de CoinAfrique Sénégal</p>
+<div style='text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.03); border-radius: 10px; margin-top: 50px;'>
+    <p style='color: #cbd5e0; margin: 0;'>Développé avec ❤️ par Streamlit | Données de <a href='https://sn.coinafrique.com' target='_blank' style='color: #4FD1C5;'>CoinAfrique Sénégal</a></p>
+    <p style='font-size: 12px; color: #718096; margin-top: 10px;'>© 2024 - Tous droits réservés</p>
 </div>
 """, unsafe_allow_html=True)
-
