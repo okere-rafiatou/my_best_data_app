@@ -143,7 +143,7 @@ if menu == "🔍 Scraper des données":
                 
                 # Afficher un aperçu
                 st.subheader("Aperçu des données scrapées")
-                st.dataframe(df_scraped.head(10))
+                st.dataframe(df_scraped)
             else:
                 st.warning("Aucune donnée trouvée.")
 
@@ -287,3 +287,4 @@ st.markdown("""
     <p>Développé avec ❤️ par Streamlit | Données de CoinAfrique Sénégal</p>
 </div>
 """, unsafe_allow_html=True)
+
