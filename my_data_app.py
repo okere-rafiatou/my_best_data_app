@@ -223,7 +223,7 @@ TRANSLATIONS = {
         
         # Footer
         'developed_by': 'Developed with ❤️ by Rafiatou | Data from',
-        'rights': '© 2024 - All rights reserved'
+        'rights': '© 2025 - All rights reserved'
     }
 }
 
@@ -888,4 +888,5 @@ st.markdown(f"""
     <p style='font-size: 12px; color: #718096; margin-top: 10px;'>{get_text('rights')}</p>
 </div>
 """, unsafe_allow_html=True)
+
 
