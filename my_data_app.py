@@ -239,7 +239,7 @@ st.markdown("""
 <style>
     /* Container centré */
     .main .block-container {
-        max-width: 1200px;
+        max-width: 1500px;
         padding-left: 2rem;
         padding-right: 2rem;
     }
@@ -647,17 +647,47 @@ elif menu == get_text('menu_dashboard'):
     if not df_raw.empty:
         df_clean = clean_data(df_raw)
         
+        # Métriques principales avec design amélioré
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric(get_text('total_ads'), len(df_clean))
-        with col2:
-            st.metric(get_text('avg_price'), f"{df_clean['price_clean'].mean():,.0f} CFA")
-        with col3:
-            st.metric(get_text('min_price'), f"{df_clean['price_clean'].min():,.0f} CFA")
-        with col4:
-            st.metric(get_text('max_price'), f"{df_clean['price_clean'].max():,.0f} CFA")
+            st.markdown("""
+            <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; text-align: center;'>
+                <p style='color: white; font-size: 14px; margin: 0;'>📊 """ + get_text('total_ads') + """</p>
+                <p style='color: white; font-size: 32px; font-weight: bold; margin: 10px 0;'>""" + str(len(df_clean)) + """</p>
+            </div>
+            """, unsafe_allow_html=True)
         
+        with col2:
+            st.markdown("""
+            <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 15px; text-align: center;'>
+                <p style='color: white; font-size: 14px; margin: 0;'>💰 """ + get_text('avg_price') + """</p>
+                <p style='color: white; font-size: 32px; font-weight: bold; margin: 10px 0;'>""" + f"{df_clean['price_clean'].mean():,.0f}" + """</p>
+                <p style='color: white; font-size: 12px; margin: 0;'>CFA</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            st.markdown("""
+            <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 15px; text-align: center;'>
+                <p style='color: white; font-size: 14px; margin: 0;'>💵 """ + get_text('min_price') + """</p>
+                <p style='color: white; font-size: 32px; font-weight: bold; margin: 10px 0;'>""" + f"{df_clean['price_clean'].min():,.0f}" + """</p>
+                <p style='color: white; font-size: 12px; margin: 0;'>CFA</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            st.markdown("""
+            <div style='background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 20px; border-radius: 15px; text-align: center;'>
+                <p style='color: white; font-size: 14px; margin: 0;'>💸 """ + get_text('max_price') + """</p>
+                <p style='color: white; font-size: 32px; font-weight: bold; margin: 10px 0;'>""" + f"{df_clean['price_clean'].max():,.0f}" + """</p>
+                <p style='color: white; font-size: 12px; margin: 0;'>CFA</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Statistiques par catégorie
         st.subheader(get_text('stats_by_category'))
         category_stats = df_clean.groupby('category').agg({
             'price_clean': ['count', 'mean', 'min', 'max']
@@ -665,22 +695,106 @@ elif menu == get_text('menu_dashboard'):
         category_stats.columns = [get_text('count'), get_text('avg_price_cfa'), get_text('min_price_cfa'), get_text('max_price_cfa')]
         st.dataframe(category_stats, use_container_width=True)
         
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Graphiques avec Plotly
+        import plotly.express as px
+        import plotly.graph_objects as go
+        
         col1, col2 = st.columns(2)
         
         with col1:
             st.subheader(get_text('avg_by_category'))
-            avg_prices = df_clean.groupby('category')['price_clean'].mean().sort_values(ascending=False)
-            st.bar_chart(avg_prices)
+            avg_prices = df_clean.groupby('category')['price_clean'].mean().sort_values(ascending=False).reset_index()
+            fig1 = px.bar(avg_prices, x='category', y='price_clean',
+                         color='price_clean',
+                         color_continuous_scale='Viridis',
+                         labels={'price_clean': 'Prix moyen (CFA)', 'category': 'Catégorie'},
+                         title='')
+            fig1.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#e2e8f0'),
+                showlegend=False,
+                height=400
+            )
+            st.plotly_chart(fig1, use_container_width=True)
         
         with col2:
             st.subheader(get_text('ads_by_category'))
-            counts = df_clean['category'].value_counts()
-            st.bar_chart(counts)
+            counts = df_clean['category'].value_counts().reset_index()
+            counts.columns = ['category', 'count']
+            fig2 = px.pie(counts, values='count', names='category',
+                         color_discrete_sequence=px.colors.qualitative.Set3,
+                         title='',
+                         hole=0.4)
+            fig2.update_layout(
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
+                font=dict(color='#e2e8f0'),
+                height=400
+            )
+            st.plotly_chart(fig2, use_container_width=True)
         
+        # Distribution des prix
+        st.subheader("📊 Distribution des prix")
+        fig3 = px.box(df_clean, x='category', y='price_clean',
+                     color='category',
+                     color_discrete_sequence=px.colors.qualitative.Pastel,
+                     labels={'price_clean': 'Prix (CFA)', 'category': 'Catégorie'},
+                     title='')
+        fig3.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#e2e8f0'),
+            showlegend=False,
+            height=400
+        )
+        st.plotly_chart(fig3, use_container_width=True)
+        
+        # Top localisations
         st.subheader(get_text('top_locations'))
-        top_locations = df_clean['address'].value_counts().head(10)
-        st.bar_chart(top_locations)
+        top_locations = df_clean['address'].value_counts().head(10).reset_index()
+        top_locations.columns = ['address', 'count']
+        fig4 = px.bar(top_locations, x='count', y='address',
+                     orientation='h',
+                     color='count',
+                     color_continuous_scale='Plasma',
+                     labels={'count': 'Nombre d\'annonces', 'address': 'Localisation'},
+                     title='')
+        fig4.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#e2e8f0'),
+            showlegend=False,
+            height=450
+        )
+        st.plotly_chart(fig4, use_container_width=True)
         
+        # Analyse des prix par localisation (top 10)
+        st.subheader("💰 Prix moyen par localisation (Top 10)")
+        top_10_locations = df_clean['address'].value_counts().head(10).index
+        df_top_locations = df_clean[df_clean['address'].isin(top_10_locations)]
+        avg_price_location = df_top_locations.groupby('address')['price_clean'].mean().sort_values(ascending=False).reset_index()
+        
+        fig5 = px.bar(avg_price_location, x='address', y='price_clean',
+                     color='price_clean',
+                     color_continuous_scale='Blues',
+                     labels={'price_clean': 'Prix moyen (CFA)', 'address': 'Localisation'},
+                     title='')
+        fig5.update_layout(
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='#e2e8f0'),
+            showlegend=False,
+            height=400,
+            xaxis_tickangle=-45
+        )
+        st.plotly_chart(fig5, use_container_width=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Explorer les données
         st.subheader(get_text('explore_data'))
         
         selected_cat = st.multiselect(
@@ -704,7 +818,6 @@ elif menu == get_text('menu_dashboard'):
         
     else:
         st.info(get_text('no_data_scrape_first'))
-
 # ==================== SECTION 4: FORMULAIRES ====================
 elif menu == get_text('menu_forms'):
     st.header(get_text('forms_header'))
@@ -775,3 +888,4 @@ st.markdown(f"""
     <p style='font-size: 12px; color: #718096; margin-top: 10px;'>{get_text('rights')}</p>
 </div>
 """, unsafe_allow_html=True)
+
